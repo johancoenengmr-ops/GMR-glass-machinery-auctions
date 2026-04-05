@@ -35,13 +35,15 @@ export default function AuctionDetailPage() {
     e.preventDefault();
     setBidErr('');
     setBidMsg('');
-    if (!bidAmount || parseFloat(bidAmount) <= 0) {
-      setBidErr('Please enter a valid bid amount.');
+    const amount = parseFloat(bidAmount);
+    const currentMin = auction.current_bid || auction.starting_price;
+    if (!bidAmount || isNaN(amount) || amount <= currentMin) {
+      setBidErr(`Please enter a bid higher than €${currentMin.toLocaleString('nl-BE')}.`);
       return;
     }
     setBidding(true);
     try {
-      await api.post(`/api/auctions/${id}/bids`, { amount: parseFloat(bidAmount) });
+      await api.post(`/api/auctions/${id}/bids`, { amount });
       setBidMsg('✅ Bid placed successfully!');
       setBidAmount('');
       await fetchAuction();
@@ -190,7 +192,7 @@ export default function AuctionDetailPage() {
                   <input
                     className="form-control"
                     type="number"
-                    step="100"
+                    step="1"
                     min={minBid}
                     placeholder={`Min: €${minBid.toLocaleString('nl-BE')}`}
                     value={bidAmount}
