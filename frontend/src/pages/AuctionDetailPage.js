@@ -56,7 +56,7 @@ export default function AuctionDetailPage() {
   if (error) return <div className="page"><div className="error-msg">{error}</div></div>;
 
   const currentBid = auction.current_bid || auction.starting_price;
-  const minBid = currentBid + 1;
+  const minBid = currentBid + 500;
   const isActive = auction.status === 'active';
 
   return (
@@ -190,7 +190,7 @@ export default function AuctionDetailPage() {
                   <input
                     className="form-control"
                     type="number"
-                    step="100"
+                    step="1"
                     min={minBid}
                     placeholder={`Min: €${minBid.toLocaleString('nl-BE')}`}
                     value={bidAmount}
@@ -198,7 +198,7 @@ export default function AuctionDetailPage() {
                     required
                   />
                   <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 4 }}>
-                    Must be higher than €{currentBid.toLocaleString('nl-BE')}
+                    Must be at least €500 above current price (min. €{minBid.toLocaleString('nl-BE')})
                   </div>
                 </div>
                 <button className="btn btn-accent btn-full" type="submit" disabled={bidding}>
