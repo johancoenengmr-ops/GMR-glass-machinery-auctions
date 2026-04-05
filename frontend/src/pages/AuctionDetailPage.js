@@ -190,7 +190,7 @@ export default function AuctionDetailPage() {
                   <input
                     className="form-control"
                     type="number"
-                    step="100"
+                    step="1"
                     min={minBid}
                     placeholder={`Min: €${minBid.toLocaleString('nl-BE')}`}
                     value={bidAmount}
