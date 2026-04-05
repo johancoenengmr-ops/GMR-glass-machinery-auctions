@@ -161,7 +161,15 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
               className="form-control"
               name="image_url"
               value={form.image_url}
-              onChange={(e) => { handleChange(e); setUploadPreview(e.target.value); setUploadFile(null); }}
+              onChange={(e) => {
+                handleChange(e);
+                setUploadPreview(e.target.value);
+                if (objectUrlRef.current) {
+                  URL.revokeObjectURL(objectUrlRef.current);
+                  objectUrlRef.current = null;
+                }
+                setUploadFile(null);
+              }}
               placeholder="https://… or upload a file below"
             />
           </div>

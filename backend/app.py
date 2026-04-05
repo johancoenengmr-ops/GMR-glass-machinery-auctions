@@ -445,9 +445,6 @@ def upload_image():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
 
-    if not allowed_file(file.filename):
-        return jsonify({'error': 'Invalid file type. Allowed: JPG, JPEG, PNG, GIF, WEBP'}), 400
-
     safe_name = secure_filename(file.filename)
     if not safe_name or not allowed_file(safe_name):
         return jsonify({'error': 'Invalid file type. Allowed: JPG, JPEG, PNG, GIF, WEBP'}), 400
