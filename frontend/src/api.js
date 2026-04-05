@@ -14,4 +14,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Resolve an image URL. Uploaded images are stored as relative paths
+ * (/uploads/...) and need the backend base URL prepended.
+ */
+export function getImageUrl(imageUrl) {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('/uploads/')) return `${API_BASE}${imageUrl}`;
+  return imageUrl;
+}
+
 export default api;

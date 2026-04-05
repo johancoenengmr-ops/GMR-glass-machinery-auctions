@@ -1,6 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import CountdownTimer from './CountdownTimer';
+import { getImageUrl } from '../api';
+
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800';
 
 export default function AuctionCard({ auction }) {
   const currentBid = auction.current_bid || auction.starting_price;
@@ -9,10 +12,10 @@ export default function AuctionCard({ auction }) {
     <div className="card">
       <img
         className="card-img"
-        src={auction.image_url || 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800'}
+        src={getImageUrl(auction.image_url) || FALLBACK_IMG}
         alt={auction.title}
         onError={(e) => {
-          e.target.src = 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800';
+          e.target.src = FALLBACK_IMG;
         }}
       />
       <div className="card-body">

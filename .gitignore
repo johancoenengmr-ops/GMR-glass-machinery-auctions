@@ -36,3 +36,7 @@ npm-debug.log*
 venv/
 .venv/
 env/
+
+# Uploaded files (keep directory, ignore contents)
+backend/uploads/*
+!backend/uploads/.gitkeep

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../api';
+import api, { getImageUrl } from '../api';
 import { useAuth } from '../context/AuthContext';
 import CountdownTimer from '../components/CountdownTimer';
+
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800';
 
 export default function AuctionDetailPage() {
   const { id } = useParams();
@@ -72,10 +74,10 @@ export default function AuctionDetailPage() {
         <div>
           <img
             className="detail-img"
-            src={auction.image_url || 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800'}
+            src={getImageUrl(auction.image_url) || FALLBACK_IMG}
             alt={auction.title}
             onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800';
+              e.target.src = FALLBACK_IMG;
             }}
           />
 

@@ -41,15 +41,49 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
   );
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState(auction?.image_url || '');
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile) return null;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      const res = await api.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.url;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Image upload failed.');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSaving(true);
     try {
-      const payload = { ...form, end_time: new Date(form.end_time).toISOString() };
+      let imageUrl = form.image_url;
+      if (uploadFile) {
+        const uploaded = await handleUpload();
+        if (!uploaded) { setSaving(false); return; }
+        imageUrl = uploaded;
+      }
+      const payload = { ...form, image_url: imageUrl, end_time: new Date(form.end_time).toISOString() };
       if (isNew) {
         await api.post('/api/auctions', payload);
       } else {
@@ -113,8 +147,37 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
           </div>
           <div className="form-group">
             <label className="form-label">Image URL</label>
-            <input className="form-control" name="image_url" value={form.image_url} onChange={handleChange} />
+            <input
+              className="form-control"
+              name="image_url"
+              value={form.image_url}
+              onChange={(e) => { handleChange(e); setUploadPreview(e.target.value); setUploadFile(null); }}
+              placeholder="https://… or upload a file below"
+            />
           </div>
+          <div className="form-group">
+            <label className="form-label">Upload Image from Computer</label>
+            <input
+              className="form-control"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleFileChange}
+            />
+            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 4 }}>
+              Accepted: JPG, PNG, GIF, WEBP · Max 16 MB. Uploading a file overrides the Image URL field.
+            </div>
+          </div>
+          {uploadPreview && (
+            <div className="form-group">
+              <label className="form-label">Image Preview</label>
+              <img
+                src={uploadPreview}
+                alt="Preview"
+                style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8, objectFit: 'contain', border: '1px solid #ddd' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          )}
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Starting Price (€) *</label>
@@ -149,8 +212,8 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
             <input className="form-control" type="datetime-local" name="end_time" value={form.end_time} onChange={handleChange} required />
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? 'Saving…' : isNew ? 'Create' : 'Save Changes'}
+            <button className="btn btn-primary" type="submit" disabled={saving || uploading}>
+              {uploading ? 'Uploading image…' : saving ? 'Saving…' : isNew ? 'Create' : 'Save Changes'}
             </button>
             <button className="btn btn-ghost" type="button" onClick={onClose}>Cancel</button>
           </div>
