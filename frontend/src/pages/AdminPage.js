@@ -10,6 +10,9 @@ function StatsGrid({ stats }) {
     { label: 'Ended Auctions', value: stats.ended_auctions },
     { label: 'Total Bids', value: stats.total_bids },
     { label: 'Registered Users', value: stats.total_users },
+    { label: 'Payments Received', value: stats.paid_payments },
+    { label: 'Payments Pending', value: stats.pending_payments },
+    { label: 'Total Revenue', value: stats.total_revenue != null ? `€${Number(stats.total_revenue).toLocaleString('nl-BE')}` : '–' },
   ];
   return (
     <div className="stats-grid">
@@ -32,11 +35,14 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
           end_time: auction.end_time ? auction.end_time.slice(0, 16) : '',
           category_id: auction.category_id || '',
           reserve_price: auction.reserve_price || '',
+          buyer_premium_rate: auction.buyer_premium_rate ?? 12,
+          vat_rate: auction.vat_rate ?? 21,
         }
       : {
           title: '', description: '', manufacturer: '', model_number: '', year: '',
           condition: '', location: '', image_url: '', starting_price: '', reserve_price: '',
           end_time: '', category_id: '', status: 'active',
+          buyer_premium_rate: 12, vat_rate: 21,
         }
   );
   const [error, setError] = useState('');
@@ -127,6 +133,16 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
           </div>
           <div className="form-row">
             <div className="form-group">
+              <label className="form-label">Buyer's Premium (%)</label>
+              <input className="form-control" type="number" step="0.5" name="buyer_premium_rate" value={form.buyer_premium_rate} onChange={handleChange} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">VAT Rate (%)</label>
+              <input className="form-control" type="number" step="0.5" name="vat_rate" value={form.vat_rate} onChange={handleChange} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
               <label className="form-label">Category</label>
               <select className="form-control" name="category_id" value={form.category_id} onChange={handleChange}>
                 <option value="">None</option>
@@ -168,8 +184,11 @@ export default function AdminPage() {
   const [auctions, setAuctions] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [settings, setSettings] = useState({ buyer_premium_rate: 12, vat_rate: 21, anti_snipe_minutes: 2 });
+  const [settingsMsg, setSettingsMsg] = useState('');
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); // null | 'new' | auction object
+  const [modal, setModal] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [error, setError] = useState('');
 
@@ -182,16 +201,20 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, auctionsRes, usersRes, catsRes] = await Promise.all([
+      const [statsRes, auctionsRes, usersRes, catsRes, paymentsRes, settingsRes] = await Promise.all([
         api.get('/api/admin/stats'),
         api.get('/api/auctions/all'),
         api.get('/api/admin/users'),
         api.get('/api/categories'),
+        api.get('/api/admin/payments'),
+        api.get('/api/admin/settings'),
       ]);
       setStats(statsRes.data);
       setAuctions(auctionsRes.data);
       setUsers(usersRes.data);
       setCategories(catsRes.data);
+      setPayments(paymentsRes.data);
+      setSettings(settingsRes.data);
     } catch (err) {
       setError('Failed to load admin data.');
     } finally {
@@ -214,12 +237,41 @@ export default function AdminPage() {
     }
   };
 
+  const handleCloseAuction = async (id) => {
+    try {
+      await api.post(`/api/admin/auctions/${id}/close`);
+      fetchData();
+    } catch (err) {
+      setError('Failed to close auction.');
+    }
+  };
+
   const toggleAdmin = async (userId, isAdmin) => {
     try {
       await api.put(`/api/admin/users/${userId}`, { is_admin: !isAdmin });
       fetchData();
     } catch (err) {
       setError('Failed to update user.');
+    }
+  };
+
+  const updatePaymentStatus = async (paymentId, status) => {
+    try {
+      await api.put(`/api/admin/payments/${paymentId}`, { status });
+      fetchData();
+    } catch (err) {
+      setError('Failed to update payment.');
+    }
+  };
+
+  const saveSettings = async (e) => {
+    e.preventDefault();
+    setSettingsMsg('');
+    try {
+      await api.put('/api/admin/settings', settings);
+      setSettingsMsg('✅ Settings saved successfully.');
+    } catch (err) {
+      setError('Failed to save settings.');
     }
   };
 
@@ -234,7 +286,12 @@ export default function AdminPage() {
       <StatsGrid stats={stats} />
 
       <div className="tabs">
-        {[['auctions', '📋 Auctions'], ['users', '👥 Users']].map(([key, label]) => (
+        {[
+          ['auctions', '📋 Auctions'],
+          ['users', '👥 Users'],
+          ['payments', '💳 Payments'],
+          ['settings', '⚙️ Settings'],
+        ].map(([key, label]) => (
           <div key={key} className={`tab${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}>
             {label}
           </div>
@@ -267,7 +324,10 @@ export default function AdminPage() {
                         <td><span className={`badge badge-${a.status}`}>{a.status}</span></td>
                         <td>{new Date(a.end_time).toLocaleDateString('nl-BE')}</td>
                         <td>
-                          <button className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} onClick={() => setModal(a)}>Edit</button>
+                          <button className="btn btn-ghost btn-sm" style={{ marginRight: 4 }} onClick={() => setModal(a)}>Edit</button>
+                          {a.status === 'active' && (
+                            <button className="btn btn-ghost btn-sm" style={{ marginRight: 4 }} onClick={() => handleCloseAuction(a.id)}>Close</button>
+                          )}
                           <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(a.id)}>Delete</button>
                         </td>
                       </tr>
@@ -307,6 +367,137 @@ export default function AdminPage() {
               </div>
             </>
           )}
+
+          {tab === 'payments' && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 16 }}>Payment Reconciliation ({payments.length})</h2>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice #</th>
+                      <th>User</th>
+                      <th>Auction</th>
+                      <th>Winning Bid</th>
+                      <th>Total</th>
+                      <th>Method</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p) => (
+                      <tr key={p.id}>
+                        <td><strong>{p.invoice_number}</strong></td>
+                        <td>
+                          <div>{p.user_name || '—'}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#888' }}>{p.user_email}</div>
+                        </td>
+                        <td>{p.auction_title || `#${p.auction_id}`}</td>
+                        <td>€{p.winning_bid.toLocaleString('nl-BE')}</td>
+                        <td><strong>€{p.total.toLocaleString('nl-BE')}</strong></td>
+                        <td>{p.payment_method || '—'}</td>
+                        <td><PaymentStatusBadge status={p.status} /></td>
+                        <td>{new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
+                        <td>
+                          {p.status === 'pending' && (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => updatePaymentStatus(p.id, 'paid')}
+                            >
+                              ✅ Mark Paid
+                            </button>
+                          )}
+                          {p.status === 'paid' && (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => updatePaymentStatus(p.id, 'refunded')}
+                            >
+                              ↩ Refund
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {tab === 'settings' && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 16 }}>Platform Settings</h2>
+              <div className="card" style={{ maxWidth: 500, padding: 28 }}>
+                {settingsMsg && <div className="success-msg">{settingsMsg}</div>}
+                <form onSubmit={saveSettings}>
+                  <div className="form-group">
+                    <label className="form-label">Buyer's Premium Rate (%)</label>
+                    <input
+                      className="form-control"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      max="50"
+                      value={settings.buyer_premium_rate}
+                      onChange={(e) => setSettings((s) => ({ ...s, buyer_premium_rate: parseFloat(e.target.value) }))}
+                    />
+                    <small style={{ color: '#888' }}>Applied to all new auctions as default (currently {settings.buyer_premium_rate}%)</small>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">VAT Rate (%)</label>
+                    <input
+                      className="form-control"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      max="50"
+                      value={settings.vat_rate}
+                      onChange={(e) => setSettings((s) => ({ ...s, vat_rate: parseFloat(e.target.value) }))}
+                    />
+                    <small style={{ color: '#888' }}>Belgian standard VAT rate (currently {settings.vat_rate}%)</small>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Anti-sniping Extension (minutes)</label>
+                    <input
+                      className="form-control"
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={settings.anti_snipe_minutes}
+                      onChange={(e) => setSettings((s) => ({ ...s, anti_snipe_minutes: parseInt(e.target.value, 10) }))}
+                    />
+                    <small style={{ color: '#888' }}>Extend auction by this many minutes when a bid is placed in final minutes</small>
+                  </div>
+                  <button className="btn btn-primary" type="submit">Save Settings</button>
+                </form>
+
+                <div style={{ marginTop: 24, padding: 16, background: '#f7f9fc', borderRadius: 8, fontSize: '0.85rem', color: '#666' }}>
+                  <strong>Bid Increment Schedule</strong>
+                  <table style={{ marginTop: 8, width: '100%', borderCollapse: 'collapse' }}>
+                    <thead><tr><th style={{ textAlign: 'left', fontWeight: 600 }}>Current Price</th><th style={{ textAlign: 'left', fontWeight: 600 }}>Min. Increment</th></tr></thead>
+                    <tbody>
+                      {[
+                        ['< €1,000', '€50'],
+                        ['€1,000 – €4,999', '€100'],
+                        ['€5,000 – €9,999', '€250'],
+                        ['€10,000 – €49,999', '€500'],
+                        ['€50,000 – €99,999', '€1,000'],
+                        ['€100,000 – €499,999', '€2,500'],
+                        ['€500,000+', '€5,000'],
+                      ].map(([price, incr]) => (
+                        <tr key={price}>
+                          <td style={{ padding: '3px 0' }}>{price}</td>
+                          <td style={{ padding: '3px 0' }}>{incr}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -337,5 +528,23 @@ export default function AdminPage() {
         />
       )}
     </div>
+  );
+}
+
+function PaymentStatusBadge({ status }) {
+  const map = {
+    pending: { bg: '#fff3cd', color: '#856404', label: '⏳ Pending' },
+    paid: { bg: '#d4f7e0', color: '#1a7a46', label: '✅ Paid' },
+    failed: { bg: '#ffe0e0', color: '#c1121f', label: '❌ Failed' },
+    refunded: { bg: '#e8e8f0', color: '#5a5a8a', label: '↩ Refunded' },
+  };
+  const s = map[status] || { bg: '#eee', color: '#666', label: status };
+  return (
+    <span style={{
+      display: 'inline-block', padding: '3px 10px', borderRadius: 20,
+      fontSize: '0.75rem', fontWeight: 600, background: s.bg, color: s.color,
+    }}>
+      {s.label}
+    </span>
   );
 }
