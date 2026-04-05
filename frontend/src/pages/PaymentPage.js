@@ -69,7 +69,7 @@ export default function PaymentPage() {
           <div style={{ fontSize: '3rem', marginBottom: 12 }}>✅</div>
           <h2 style={{ color: '#1a7a46', marginBottom: 8 }}>Payment Complete</h2>
           <p style={{ color: '#555' }}>Invoice #{invoice.invoice_number} has been paid.</p>
-          <p style={{ color: '#555', marginTop: 4 }}>Total paid: <strong>€{invoice.total.toLocaleString('nl-BE')}</strong></p>
+          <p style={{ color: '#555', marginTop: 4 }}>Total paid: <strong>€{invoice.total.toLocaleString('nl-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
           <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: 20 }}>← Back to Dashboard</Link>
         </div>
       ) : (

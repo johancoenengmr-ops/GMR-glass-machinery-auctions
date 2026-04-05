@@ -96,7 +96,7 @@ def _create_notification(user_id: int, notif_type: str, content: str, auction_id
 
 def _generate_invoice_number() -> str:
     now = datetime.utcnow()
-    return f"GMR-{now.year}{now.month:02d}-{uuid.uuid4().hex[:6].upper()}"
+    return f"GMR-{now.year}{now.month:02d}-{uuid.uuid4().hex[:8].upper()}"
 
 
 def close_expired_auctions():
@@ -710,7 +710,7 @@ def checkout(payment_id):
         # Real Stripe flow
         try:
             intent = stripe.PaymentIntent.create(
-                amount=int(payment.total * 100),  # cents
+                amount=round(payment.total * 100),  # cents, rounded to avoid float precision errors
                 currency='eur',
                 metadata={
                     'invoice_number': payment.invoice_number,
@@ -727,8 +727,8 @@ def checkout(payment_id):
                 'payment_id': payment.id,
                 'total': payment.total,
             })
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+        except Exception:
+            return jsonify({'error': 'Payment processing failed. Please try again or contact support.'}), 500
     else:
         # Simulated payment (no Stripe key configured)
         payment.payment_method = payment_method

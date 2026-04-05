@@ -66,10 +66,6 @@ export default function DashboardPage() {
     return <div className="page"><div className="error-msg">Please log in to view your dashboard.</div></div>;
   }
 
-  const activeBids = bids.filter((b) => {
-    // Show bids where the auction is still active (approximate check by auction status via won list)
-    return !won.some((w) => w.id === b.auction_id);
-  });
 
   return (
     <div className="page">
