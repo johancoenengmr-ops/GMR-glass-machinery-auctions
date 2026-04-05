@@ -22,7 +22,17 @@ Thumbs.db
 # Build
 /build
 /dist
+frontend/build/
 
 # Logs
 *.log
 npm-debug.log*
+
+# Database files
+*.db
+*.sqlite
+
+# Python virtual environments
+venv/
+.venv/
+env/
