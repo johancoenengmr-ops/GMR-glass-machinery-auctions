@@ -301,11 +301,11 @@ def place_bid(auction_id):
         return jsonify({'error': 'Bid amount is required'}), 400
 
     amount = float(data['amount'])
-    min_bid = (auction.current_bid or auction.starting_price)
+    min_bid = (auction.current_bid or auction.starting_price) + 1
 
-    if amount <= min_bid:
+    if amount < min_bid:
         return jsonify({
-            'error': f'Bid must be higher than current bid of €{min_bid:.2f}'
+            'error': f'Bid must be at least €{min_bid:.2f}'
         }), 400
 
     user_id = get_jwt_identity()
