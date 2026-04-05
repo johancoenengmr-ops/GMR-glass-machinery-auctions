@@ -44,14 +44,24 @@ function AuctionModal({ auction, categories, onClose, onSaved }) {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState(auction?.image_url || '');
+  const objectUrlRef = React.useRef(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlRef.current = previewUrl;
     setUploadFile(file);
-    setUploadPreview(URL.createObjectURL(file));
+    setUploadPreview(previewUrl);
   };
 
   const handleUpload = async () => {

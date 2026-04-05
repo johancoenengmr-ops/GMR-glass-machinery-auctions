@@ -448,12 +448,16 @@ def upload_image():
     if not allowed_file(file.filename):
         return jsonify({'error': 'Invalid file type. Allowed: JPG, JPEG, PNG, GIF, WEBP'}), 400
 
-    ext = file.filename.rsplit('.', 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
-    save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+    safe_name = secure_filename(file.filename)
+    if not safe_name or not allowed_file(safe_name):
+        return jsonify({'error': 'Invalid file type. Allowed: JPG, JPEG, PNG, GIF, WEBP'}), 400
+
+    ext = safe_name.rsplit('.', 1)[1].lower()
+    unique_filename = f"{uuid.uuid4().hex}.{ext}"
+    save_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
     file.save(save_path)
 
-    file_url = f"/uploads/{unique_name}"
+    file_url = f"/uploads/{unique_filename}"
     return jsonify({'url': file_url}), 201
 
 
@@ -473,4 +477,4 @@ if __name__ == '__main__':
         create_tables()
         from seed_data import seed
         seed()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=os.getenv('FLASK_DEBUG', 'false').lower() == 'true', host='0.0.0.0', port=5000)
