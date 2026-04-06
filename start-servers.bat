@@ -1,3 +1,10 @@
 @echo off
-start powershell -NoExit -Command "cd backend_directory && python app.py"
-start powershell -NoExit -Command "cd frontend_directory && npm start"
+REM Navigate to backend and start Python server
+start cmd /k "cd backend && python app.py"
+
+REM Wait 3 seconds for backend to start, then start frontend
+timeout /t 3 /nobreak
+start cmd /k "cd frontend && npm start"
+
+REM Keep this window open
+pause
