@@ -35,8 +35,13 @@ export default function AuctionDetailPage() {
     e.preventDefault();
     setBidErr('');
     setBidMsg('');
-    if (!bidAmount || parseFloat(bidAmount) <= 0) {
+    const amount = parseFloat(bidAmount);
+    if (isNaN(amount) || amount <= 0) {
       setBidErr('Please enter a valid bid amount.');
+      return;
+    }
+    if (amount < minBid) {
+      setBidErr(`Your bid must be at least €${minBid.toLocaleString('nl-BE')} (current price + €500 minimum increase).`);
       return;
     }
     setBidding(true);
@@ -190,8 +195,7 @@ export default function AuctionDetailPage() {
                   <input
                     className="form-control"
                     type="number"
-                    step="1"
-                    min={minBid}
+                    step="any"
                     placeholder={`Min: €${minBid.toLocaleString('nl-BE')}`}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
