@@ -1,5 +1,6 @@
 @echo off
-cd /d "C:\Users\jcgla\OneDrive - GMR\Gebruikers\jcgla\GMR\Github documents\GMR-glass-machinery-auctions"
+REM Get the directory where this batch file is located
+cd /d "%~dp0"
 
 REM Navigate to backend and start Python server
 start cmd /k "cd backend && python app.py"
