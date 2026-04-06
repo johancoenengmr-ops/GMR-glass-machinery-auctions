@@ -260,9 +260,9 @@ def place_bid(auction_id):
     min_bid = current_highest + MIN_BID_INCREMENT
 
     if amount < min_bid:
-    return jsonify({
-        'error': f'Bid must be at least ���{min_bid:,.0f} (current: €{current_highest:,.0f} + minimum €{MIN_BID_INCREMENT} increment)'
-    }), 400
+        return jsonify({
+            'error': f'Bid must be at least \u20ac{min_bid:,.0f} (current: \u20ac{current_highest:,.0f} + minimum \u20ac{MIN_BID_INCREMENT} increment)'
+        }), 400
     user = _current_user()
     bid = Bid(auction_id=auction_id, user_id=user.id, amount=amount)
     auction.current_bid = amount
