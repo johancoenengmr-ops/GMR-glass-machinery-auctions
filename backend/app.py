@@ -42,6 +42,12 @@ def _generate_invoice_number():
     return f"GMR-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:8].upper()}"
 
 
+# ── Hello route ───────────────────────────────────────────────────────────────
+@app.route('/api/hello', methods=['GET'])
+def hello():
+    return jsonify({'message': 'Hello from GMR Glass Machinery Auctions!'})
+
+
 # ── Auth routes ───────────────────────────────────────────────────────────────
 @app.route('/api/auth/register', methods=['POST'])
 def register():
