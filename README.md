@@ -181,3 +181,4 @@ The database is automatically seeded with sample data when the backend starts fo
 - `GET /api/admin/users` – List all users
 - `PUT /api/admin/users/{id}` – Update user (toggle admin)
 
+Hallo dit is een test van Arne
