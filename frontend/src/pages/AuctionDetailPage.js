@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import AuctionDetail from '../components/AuctionDetail';
 
 const AuctionDetailPage = () => {
-    const { auctionId } = useParams();
+    const { id: auctionId } = useParams();
 
     return (
         <div>

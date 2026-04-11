@@ -22,8 +22,20 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-chan
 # ── Extensions ────────────────────────────────────────────────────────────────
 db.init_app(app)
 bcrypt.init_app(app)
-JWTManager(app)
+jwt = JWTManager(app)
 CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001'])
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({'error': 'Your session has expired. Please log in again.'}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({'error': 'Invalid authentication token. Please log in again.'}), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({'error': 'Authentication required. Please log in.'}), 401
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 MIN_BID_INCREMENT = 500  # Minimum amount a bid must exceed the current highest bid
@@ -264,6 +276,8 @@ def place_bid(auction_id):
             'error': f'Bid must be at least €{min_bid:,.0f} (current: €{current_highest:,.0f} + minimum €{MIN_BID_INCREMENT} increment)'
         }), 400
     user = _current_user()
+    if not user:
+        return jsonify({'error': 'User account not found. Please log in again.'}), 401
     bid = Bid(auction_id=auction_id, user_id=user.id, amount=amount)
     auction.current_bid = amount
     db.session.add(bid)

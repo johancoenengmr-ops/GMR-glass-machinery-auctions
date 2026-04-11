@@ -241,7 +241,7 @@ export default function AuctionDetail({ auctionId }) {
                 {bids.map((bid, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{ padding: '10px' }}>
-                      {bid.user?.name || 'Anonymous'} {bid.user?.id === user?.id && <span style={{ color: '#007bff' }}>(You)</span>}
+                      {bid.user_name || 'Anonymous'} {bid.user_id === user?.id && <span style={{ color: '#007bff' }}>(You)</span>}
                     </td>
                     <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>
                       €{bid.amount.toLocaleString('nl-BE')}
